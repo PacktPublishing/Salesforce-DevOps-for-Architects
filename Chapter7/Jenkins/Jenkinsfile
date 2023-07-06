@@ -1,0 +1,90 @@
+#!groovy
+
+//import groovy.json.JsonSlurperClassic
+
+node
+{
+    def SF_CONSUMER_KEY=env.CONNECTED_APP_CONSUMER_KEY_DH
+    def SERVER_KEY_CREDENTALS_ID=env.JWT_CRED_ID_DH
+    def TEST_LEVEL='RunAllTestsInOrg'
+    def SF_INSTANCE_URL = env.SFDC_HOST_DH
+    def SF_USERNAME = env.HUB_ORG_DH
+    def toolbelt = tool 'sf'
+
+    stage('Pull changes')
+    {
+            echo 'Pulling changes from the repository'
+            checkout scm
+    }
+
+    withCredentials([file(credentialsId: SERVER_KEY_CREDENTALS_ID, variable: 'jwt_key_file')])
+    {
+        withEnv(["HOME=${env.WORKSPACE}"])
+        {
+            stage('Auth to Salesforce')
+            {
+                    echo 'Authenticating to Salesforce'
+                    rc = bat returnStatus: true, script: "\"${toolbelt}\\sfdx\" force auth jwt grant -i ${SF_CONSUMER_KEY} --username ${SF_USERNAME} -f \"${jwt_key_file}\" -d -r ${SF_INSTANCE_URL} -a HubOrg"
+                    if (rc != 0) { error 'hub org authorization failed' }
+
+                    println rc
+            }
+
+            stage('Create scratch org')
+            {
+                        echo 'Creating scratch org'
+                        script
+                        {
+                            rc = bat returnStatus: true, script: "\"${toolbelt}\\sf\" org create scratch --target-dev-hub HubOrg --set-default --definition-file config/project-scratch-def.json --alias ciorg --wait=10"
+                            if (rc != 0)
+                            {
+                                error 'Salesforce test scratch org creation failed.'
+                            }
+                            println rc
+                        }
+            }
+
+            stage('Push To Test Scratch Org')
+            {
+                echo 'Pushing changes to test scratch org'
+                    script
+                    {
+                        rc = bat returnStatus: true, script: "\"${toolbelt}\\sf\" project deploy start --target-org ciorg"
+                        if (rc != 0)
+                        {
+                            error 'Salesforce push to test scratch org failed.'
+                        }
+                        println rc
+                    }
+            }
+
+            stage('Run tests in scratch org')
+            {
+                echo 'Running tests in scratch org at test level ${TEST_LEVEL}'
+                    script
+                    {
+                        rc = bat returnStatus: true, script: "\"${toolbelt}\\sf\" apex run test -o ciorg -l ${TEST_LEVEL} -r tap -d test-results"
+                        if (rc != 0)
+                        {
+                            error 'Salesforce test run failed.'
+                        }
+                        println rc
+                    }
+            }
+
+            stage('Delete scratch org')
+            {
+                echo 'Deleting scratch org'
+                    script
+                    {
+                        rc = bat returnStatus: true, script: "\"${toolbelt}\\sf\" org delete scratch --target-org ciorg --no-prompt"
+                        if (rc != 0)
+                        {
+                            error 'Salesforce test scratch org deletion failed.'
+                        }
+                        println rc
+                    }
+            }
+        }
+    }
+}
