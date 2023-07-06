@@ -1,0 +1,51 @@
+name: Salesforce Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  
+
+    
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Install Salesforce CLI
+        run: |
+              wget https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-linux-x64.tar.xz
+              mkdir ~/sfdx
+              tar xJf sfdx-linux-x64.tar.xz -C ~/sfdx --strip-components 1
+              echo "$HOME/sfdx/bin" >> $GITHUB_PATH
+              ~/sfdx/bin/sfdx version
+
+       # The URL is stored in the Github Secret named DEVHUB_SFDX_URL
+       # so here we store the URL into a text file
+      - name: Populate auth file with SFDX_URL secret of integration org
+        shell: bash
+        run: |
+                  echo ${{ secrets.DEVHUB_SFDX_URL}} > ./DEVHUB_SFDX_URL.txt
+        
+      - name: Authenticate to Salesforce
+        run: |
+          sf auth sfdxurl store -f DEVHUB_SFDX_URL.txt -a HubOrg
+
+      - name: Create Scratch Org
+        run: |
+          sf org create scratch --target-dev-hub HubOrg --set-default --definition-file config/project-scratch-def.json --alias ciorg --wait=10
+
+      - name: Push to Test Scratch Org
+        run: |
+          sf project deploy start --target-org ciorg
+          
+      - name: Run all Apex tests
+        run: |
+          sf apex run test -o ciorg -l RunLocalTests -r tap -d test-results
+          
+      - name: Delete scratch org
+        run: |
+          sf org delete scratch --target-org ciorg --no-prompt
