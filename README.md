@@ -52,9 +52,9 @@ With the following software and hardware list you can run all code files present
 * Becoming a Salesforce Certified Technical Architect - Second Edition [[Packt]](https://www.packtpub.com/product/becoming-a-salesforce-certified-technical-architect-second-edition/9781803239439?utm_source=github&utm_medium=repository&utm_campaign=9781803239439) [[Amazon]](https://www.amazon.com/dp/1803239433)
 
 
-## Get to Know the Author
-**Rob Cowel**
+## Get to Know the Authors
+**Rob Cowell**
  is a Salesforce DevOps Advocate at a leading platform provider in this space. He uses his wealth of experience as a Salesforce Dev and Architect to guide and advise on best practice for Salesforce DevOps. He has gained a unique insight into Salesforce trends and challenges over the years, using this to help organizations of all shapes and sizes optimize their Salesforce processes. Alongside his day job, he is an active part of the Salesforce community, providing support and sharing experiences to help others thrive.
 
-**Lars**
+**Lars Malmqvist**
 is a 32x certified Salesforce CTA and has spent the past 15 years in the Salesforce ecosystem building advanced solutions on the platform. Currently, he works as a partner in the management consultancy, Implement Consulting Group, focusing on supporting large Nordic Salesforce clients in their transformation journeys. He has published two books, Architecting AI Solutions on Salesforce and Salesforce Anti-Patterns, both with Packt Publishing.
